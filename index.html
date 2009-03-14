@@ -11,15 +11,67 @@
 <script type="text/javascript">
 var db = openDatabase("overdrive delicious.com", "0.1");
 
-function createTables() 
-{	
+function LocalStorage(){
+	this.DB_VERSION="0.1";
+	this.DB_NAME="delicious overdrive";
 	
-	db.transaction(function(tx) {
-		tx.executeSql("DROP TABLE bookmark");
-		tx.executeSql("CREATE TABLE bookmark (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)");
-	
+	/**
+	* Sets up the necessary tables for the application.
+	*/
+	this.createTables=function() 
+	{	
+
+		db.transaction(function(tx) {
+			//tx.executeSql("DROP TABLE bookmark");
+			tx.executeSql("CREATE TABLE bookmark (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)");
+			tx.executeSql("CREATE TABLE setting (id TEXT NOT NULL UNIQUE, type TEXT, value TEXT)");
+		    });	
+	}	
+	/**
+	* Checks whether the tables already exist.
+	*/
+	this.databaseExists=function()
+	{
+		if (){
+			return true;
+		}
 		
-	    });	
+		else{
+			return false;
+		}
+		
+	}
+	/**
+	* Returns one of the settings values in the local storage.
+	*/ 
+	this.getSetting=function(key){
+		
+		return value;
+	}
+	
+	this.executeQuery= function(sql) {
+		
+		db.transaction(function(tx){
+			db.transaction(function(tx){
+			     tx.executeSql("SELECT * FROM bookmark",[], function(tx, result){
+			            if (!result.rows.length){
+							alert("no matches");
+						}
+			     }, 
+				 function(tx, error){
+			     	 alert('Failed to execute SQL query: ' + error.message);
+			         return;
+			     });
+			});
+		});
+	}
+}
+
+
+
+
+function tablesExist () {
+	
 }
 
 function searchBookmarks(term) 
