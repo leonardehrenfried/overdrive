@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	
+	<title>Overdrive delicous.com</title>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"> </script>
+
+<script type="text/javascript">
+var db = openDatabase("overdrive delicious.com", "0.1");
+
+function createTables() 
+{	
+	
+	db.transaction(function(tx) {
+		tx.executeSql("DROP TABLE bookmark");
+		tx.executeSql("CREATE TABLE bookmark (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)");
+	
+		
+	    });	
+}
+
+function searchBookmarks(term) 
+{
+
+	db.transaction(function(tx) 
+	{
+		db.transaction(function(tx) 
+		{
+		     tx.executeSql("SELECT * FROM bookmark",[], function(tx, result) 
+			{
+		            
+					alert(result.rows.length);
+
+		            if (!result.rows.length)
+					{
+						alert("no matches");
+					}
+		                
+		        }, function(tx, error) 
+				{
+		            alert('Failed to retrieve bookmarks from database - ' + error.message);
+		            return;
+		        });
+		});
+	});	
+}
+
+$(document).ready(function(){
+	
+    
+	createTables();
+	
+	
+	var username="veggieboy4000";
+	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
+	
+	$.getJSON(url+"&callback=?", function(bookmarks){
+		$.each(bookmarks, function(){
+		    $("#content").append("<li><a href='"+this.u+"'>"+this.d+"</a></li>");
+		    
+			var bookmark = this;
+			var tags="";
+			$.each(bookmark.t, function() {
+			      tags+=this+",";
+				  
+			    });
+			
+			db.transaction(function(tx)
+			{
+				tx.executeSql("INSERT INTO bookmark (url, title, tags) VALUES (?,?,?)",[bookmark.u, bookmark.d, tags]);
+		    });  
+		});
+   	});
+	
+	searchBookmarks("mac");
+	
+	
+	
+});
+</script>
+	
+</head>
+
+<body>
+<ul id="content">
+</ul>
+
+</body>
+</html>
