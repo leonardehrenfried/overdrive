@@ -3,155 +3,66 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 	
-	<title>Overdrive delicous.com</title>
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"> </script>
-
-<script type="text/javascript">
-
-
-function LocalStorage(){
-	this.DB_VERSION="0.1";
-	this.DB_NAME="overdrive delicious.com";
-	this.db = openDatabase(this.DB_NAME, this.DB_VERSION);
-	this.tableList=["bookmarks", "settings"];
-	
-	/**
-	* This block checks if the database exists and creates the necessary tables.
-	*/
-	this.db.transaction(function(tx) {
-        tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) {}, function(tx, error) {
-			tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)",[],
-			function(result) { 
-                alert("table 'bookmarks' created");
-            });
-			tx.executeSql("CREATE TABLE settings (id TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
-			function(result) { 
-                alert("table 'settings' created");
-            },
-			function(tx, error) { 
-                alert("Could not create tables.");
-            });
-        });
-    });
-	
-	/**
-	* Deletes all local tables.
-	*/
-	this.deleteTables=function(){
-		this.db.transaction(function(tx) {
-	        for (i=0; i<this.tableList.length; i++){
-				tx.executeSql("DROP TABLE ?", [this.tableList[i]], 
-				function(result) { }, 
-				function(tx, error) { 
-				});
-			}
-		});
+<title>Overdrive delicous.com</title>
+<style type="text/css">
+  .searchBox {
+		-webkit-border-bottom-left-radius: 11px;
+		-webkit-border-bottom-right-radius: 11px;
+		-webkit-border-top-left-radius: 11px;
+		-webkit-border-top-right-radius: 11px;
+		-webkit-rtl-ordering: logical;
+		-webkit-user-select: text;
+		background-color: white;
+		border-bottom-color: rgb(229, 229, 229);
+		border-bottom-style: solid;
+		border-bottom-width: 1px;
+		border-left-color: rgb(229, 229, 229);
+		border-left-style: solid;
+		border-left-width: 1px;
+		border-right-color: rgb(229, 229, 229);
+		border-right-style: solid;
+		border-right-width: 1px;
+		border-top-color: rgb(229, 229, 229);
+		border-top-style: solid;
+		border-top-width: 1px;
+		color: black;
+		cursor: auto;
+		display: inline-block;
+		font-family: 'Lucida Grande';
+		font-size: 14px;
+		font-style: normal;
+		font-variant: normal;
+		font-weight: normal;
+		height: 17px;
+		letter-spacing: normal;
+		line-height: normal;
+		margin-bottom: 0px;
+		margin-left: 0px;
+		margin-right: 0px;
+		margin-top: 0px;
+		padding-bottom: 10px;
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-top: 10px;
+		text-align: auto;
+		text-indent: 0px;
+		text-shadow: none;
+		text-transform: none;
+		width: 400px;
+		word-spacing: 0px;
 	}
-	
-	/**
-	* Returns one of the settings values in the local storage.
-	*/ 
-	this.getSetting=function(key){
-		return value;
-	}
-	
-	/**
-	* Inserts a bookmark into the local db.
-	*/
-	this.insertBookmark= function(bmark) {
-		this.db.transaction(function(tx){
-			     tx.executeSql("INSERT INTO bookmarks (url, title, tags) VALUES (?,?,?)",[bmark.url, bmark.title, bmark.getTagsAsString()], 			
-				 function(tx, result){       
-			     }, 
-				 function(tx, error){
-			     	 tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString()], 			
-					 function(tx, result){       
-				     }, 
-					 function(tx, error){
-				     	 ('Could not insert or update bookmark: ' + error.message);
-				     });
-			     });
-		});
-	}
-	
-	/**
-	* Searches for a bookmark across title, url and tags.
-	* @param: the search term
-	*/
-	this.searchBookmarks=function(term) 
-	{
-		this.db.transaction(function(tx) 
-		{
-			var result=tx.executeSql("SELECT * FROM bookmarks WHERE tags LIKE '%mac%'",[], 
-				function(tx, result){
-					if (!result.rows.length){
-						return false;
-					}
-				
-					else{
-						$("#content").empty();
-						for (var i = 0; i < result.rows.length; ++i) {
-							var row = result.rows.item(i);
-							var bmark = new Bookmark(row['url'], row['title'], row['tags']);	
-						}
-		            }
-		        }, 
-				function(tx, error){
-			    	alert('Failed to retrieve bookmarks from database - ' + error.message);
-					return;
-			    });
-		});	
-	}
-}
+</style>
 
-function Bookmark(url, title, tags){
-	this.url=url;
-	this.title=title;
-		
-	if (typeof tags == 'string'){
-		this.tags=tags.split(",");
-	}
-	else
-	{
-		this.tags=tags;
-	}
-	$("#content").append("<li><a href='"+this.url+"'>"+this.title+"</a></li>");
-	this.getTagsAsString=function () {
-		var tagsString="";
-		$.each(this.tags, function() {
-		      tagsString+=this+",";
-		    });
-		return tagsString;
-	}
-}
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"> </script>
+<script type="text/javascript" src="behaviour.js"> </script>
 
-
-
-$(document).ready(function(){
-    var storage = new LocalStorage();
-
-	var username="veggieboy4000";
-	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
-	
-	$.getJSON(url+"&callback=?", function(bookmarks){
-		$.each(bookmarks, function(){
-		    var bmark= new Bookmark(this.u, this.d, this.t)
-			storage.insertBookmark(bmark);
-			var result=storage.searchBookmarks("mac");
-		});
-   	});
-
-	
-	
-});
-</script>
 	
 </head>
 
 <body>
-<input type="text"/>
+<input class="searchBox" type="text"/>
 <ul id="content">
 </ul>
 
