@@ -9,38 +9,48 @@
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"> </script>
 
 <script type="text/javascript">
-var db = openDatabase("overdrive delicious.com", "0.1");
+
 
 function LocalStorage(){
 	this.DB_VERSION="0.1";
 	this.DB_NAME="delicious overdrive";
+	this.db = openDatabase("overdrive delicious.com", "0.1");
+	this.tableList=["bookmarks", "settings"];
 	
 	/**
-	* Sets up the necessary tables for the application.
+	* This block checks if the database exists and creates the necesarry tables.
 	*/
-	this.createTables=function() 
-	{	
-
-		db.transaction(function(tx) {
-			//tx.executeSql("DROP TABLE bookmark");
-			tx.executeSql("CREATE TABLE bookmark (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)");
-			tx.executeSql("CREATE TABLE setting (id TEXT NOT NULL UNIQUE, type TEXT, value TEXT)");
-		    });	
-	}	
-	/**
-	* Checks whether the tables already exist.
-	*/
-	this.databaseExists=function()
-	{
-		if (){
-			return true;
-		}
-		
-		else{
-			return false;
-		}
+	this.db.transaction(function(tx) {
+        tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) { alert("tables exist");}, function(tx, error) {
+			tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)",[],
+			function(result) { 
+                alert("tables created");
+            });
+			tx.executeSql("CREATE TABLE settings (id TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
+			function(result) { 
+                alert("tables created");
+            },
+			function(tx, error) { 
+                alert("Could not create tables.");
+            });
+        });
+    });
+	
+	this.deleteTables=function ()	{
+	    
+		this.db.transaction(function(tx) {
+	        for (i=0; i<this.tableList.length; i++){
+				tx.executeSql("DROP TABLE ?", [this.tableList[i]], 
+				function(result) { }, 
+				function(tx, error) { 
+				});
+			}
+				
+		});
 		
 	}
+	
+	
 	/**
 	* Returns one of the settings values in the local storage.
 	*/ 
@@ -49,29 +59,22 @@ function LocalStorage(){
 		return value;
 	}
 	
-	this.executeQuery= function(sql) {
+	this.insertBookmark= function(url, title, tags) {
 		
-		db.transaction(function(tx){
-			db.transaction(function(tx){
-			     tx.executeSql("SELECT * FROM bookmark",[], function(tx, result){
-			            if (!result.rows.length){
-							alert("no matches");
-						}
+		var tagsString="";
+		$.each(tags, function() {
+		      tagsString+=this+",";
+		    });
+		
+		this.db.transaction(function(tx){
+			     tx.executeSql("INSERT INTO bookmarks (url, title, tags) VALUES (?,?,?)",[url, title, tagsString], 			
+				 function(tx, result){       
 			     }, 
 				 function(tx, error){
-			     	 alert('Failed to execute SQL query: ' + error.message);
-			         return;
+			     	 alert('Could not insert bookmark: ' + error.message);
 			     });
-			});
 		});
 	}
-}
-
-
-
-
-function tablesExist () {
-	
 }
 
 function searchBookmarks(term) 
@@ -102,8 +105,7 @@ function searchBookmarks(term)
 
 $(document).ready(function(){
 	
-    
-	createTables();
+    var storage = new LocalStorage();
 	
 	
 	var username="veggieboy4000";
@@ -112,22 +114,11 @@ $(document).ready(function(){
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.each(bookmarks, function(){
 		    $("#content").append("<li><a href='"+this.u+"'>"+this.d+"</a></li>");
-		    
-			var bookmark = this;
-			var tags="";
-			$.each(bookmark.t, function() {
-			      tags+=this+",";
-				  
-			    });
-			
-			db.transaction(function(tx)
-			{
-				tx.executeSql("INSERT INTO bookmark (url, title, tags) VALUES (?,?,?)",[bookmark.u, bookmark.d, tags]);
-		    });  
+			storage.insertBookmark(this.u, this.d, this.t);
 		});
    	});
 	
-	searchBookmarks("mac");
+	
 	
 	
 	
