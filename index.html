@@ -13,22 +13,22 @@
 
 function LocalStorage(){
 	this.DB_VERSION="0.1";
-	this.DB_NAME="delicious overdrive";
-	this.db = openDatabase("overdrive delicious.com", "0.1");
+	this.DB_NAME="overdrive delicious.com";
+	this.db = openDatabase(this.DB_NAME, this.DB_VERSION);
 	this.tableList=["bookmarks", "settings"];
 	
 	/**
-	* This block checks if the database exists and creates the necesarry tables.
+	* This block checks if the database exists and creates the necessary tables.
 	*/
 	this.db.transaction(function(tx) {
-        tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) { alert("tables exist");}, function(tx, error) {
+        tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) {}, function(tx, error) {
 			tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)",[],
 			function(result) { 
-                alert("tables created");
+                alert("table 'bookmarks' created");
             });
 			tx.executeSql("CREATE TABLE settings (id TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
 			function(result) { 
-                alert("tables created");
+                alert("table 'settings' created");
             },
 			function(tx, error) { 
                 alert("Could not create tables.");
@@ -60,19 +60,18 @@ function LocalStorage(){
 	/**
 	* Inserts a bookmark into the local db.
 	*/
-	this.insertBookmark= function(url, title, tags) {
-		
-		var tagsString="";
-		$.each(tags, function() {
-		      tagsString+=this+",";
-		    });
-		
+	this.insertBookmark= function(bmark) {
 		this.db.transaction(function(tx){
-			     tx.executeSql("INSERT INTO bookmarks (url, title, tags) VALUES (?,?,?)",[url, title, tagsString], 			
+			     tx.executeSql("INSERT INTO bookmarks (url, title, tags) VALUES (?,?,?)",[bmark.url, bmark.title, bmark.getTagsAsString()], 			
 				 function(tx, result){       
 			     }, 
 				 function(tx, error){
-			     	 //alert('Could not insert bookmark: ' + error.message);
+			     	 tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString()], 			
+					 function(tx, result){       
+				     }, 
+					 function(tx, error){
+				     	 ('Could not insert or update bookmark: ' + error.message);
+				     });
 			     });
 		});
 	}
@@ -83,20 +82,26 @@ function LocalStorage(){
 	*/
 	this.searchBookmarks=function(term) 
 	{
-		db.transaction(function(tx) 
+		this.db.transaction(function(tx) 
 		{
-			tx.executeSql("SELECT * FROM bookmark",[], function(tx, result) 
-			{
-				alert(result.rows.length);
-	            if (!result.rows.length)
-				{
-					alert("no matches");
-				}
-	        }, 
-			function(tx, error){
-		    alert('Failed to retrieve bookmarks from database - ' + error.message);
-		         return;
-		    });
+			var result=tx.executeSql("SELECT * FROM bookmarks WHERE tags LIKE '%mac%'",[], 
+				function(tx, result){
+					if (!result.rows.length){
+						return false;
+					}
+				
+					else{
+						$("#content").empty();
+						for (var i = 0; i < result.rows.length; ++i) {
+							var row = result.rows.item(i);
+							var bmark = new Bookmark(row['url'], row['title'], row['tags']);	
+						}
+		            }
+		        }, 
+				function(tx, error){
+			    	alert('Failed to retrieve bookmarks from database - ' + error.message);
+					return;
+			    });
 		});	
 	}
 }
@@ -104,28 +109,40 @@ function LocalStorage(){
 function Bookmark(url, title, tags){
 	this.url=url;
 	this.title=title;
-	this.tags=tags;
+		
+	if (typeof tags == 'string'){
+		this.tags=tags.split(",");
+	}
+	else
+	{
+		this.tags=tags;
+	}
+	$("#content").append("<li><a href='"+this.url+"'>"+this.title+"</a></li>");
+	this.getTagsAsString=function () {
+		var tagsString="";
+		$.each(this.tags, function() {
+		      tagsString+=this+",";
+		    });
+		return tagsString;
+	}
 }
 
 
 
 $(document).ready(function(){
-	
     var storage = new LocalStorage();
-	
-	
+
 	var username="veggieboy4000";
 	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
 	
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.each(bookmarks, function(){
-		    $("#content").append("<li><a href='"+this.u+"'>"+this.d+"</a></li>");
-			storage.insertBookmark(this.u, this.d, this.t);
+		    var bmark= new Bookmark(this.u, this.d, this.t)
+			storage.insertBookmark(bmark);
+			var result=storage.searchBookmarks("mac");
 		});
    	});
-	
-	
-	
+
 	
 	
 });
@@ -134,6 +151,7 @@ $(document).ready(function(){
 </head>
 
 <body>
+<input type="text"/>
 <ul id="content">
 </ul>
 
