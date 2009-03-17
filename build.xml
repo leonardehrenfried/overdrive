@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+	build
+	Created by Leonard Ehrenfried on 2009-03-15.
+	Copyright (c) 2009 __MyCompanyName__. All rights reserved.
+-->
+
+<target name="deploy-live" depends="increment-rev">
+	 <property name="live.server" value="lenniboy@quasar.webhostserver.biz"/>
+	 <property name="live.tomcat" value="/usr/local/java/tomcat"/>
+	 <exec executable="rsync">
+	  <arg line="rsync -r  * --exclude=*.sh --exclude=*.tmproj --exclude=*.db --exclude=.hg/ ${live.server}:www/tools/overdrive/" />
+	 </exec>
+</target>
+
+<target name="increment-rev">
+	<property name="revision" value="1"/> 
+	<exec executable="rsync">
+	  <arg line="perl -pi -e 's/{{REV}}/new_string/g' index.html" />
+	</exec>
+</target>

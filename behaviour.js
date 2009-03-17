@@ -12,7 +12,7 @@ function LocalStorage(){
 	*/
 	this.db.transaction(function(tx) {
         tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) {}, function(tx, error) {
-			tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT)",[],
+			tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)",[],
 			function(result) { 
                 $.jGrowl("table 'bookmarks' created");
             });
@@ -48,15 +48,31 @@ function LocalStorage(){
 	}
 	
 	/**
+	* Returns one of the settings values in the local storage.
+	*/ 
+	this.setSetting=function(key, value){
+		this.db.transaction(function(tx) {
+			tx.executeSql("SELECT id FROM settings WHERE id=?", [key], 
+			function(result) { }, 
+			function(tx, error) { 
+			});
+		});
+		return value;
+	}
+	
+	/**
 	* Inserts a bookmark into the local db.
 	*/
 	this.insertBookmark= function(bmark) {
+		$.jGrowl('date: ' + bmark.modified);
 		this.db.transaction(function(tx){
-			     tx.executeSql("INSERT INTO bookmarks (url, title, tags) VALUES (?,?,?)",[bmark.url, bmark.title, bmark.getTagsAsString()], 			
+			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,?)",
+					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.modified], 			
 				 function(tx, result){       
 			     }, 
 				 function(tx, error){
-			     	 tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url], 			
+			     	 //$.jGrowl('Could not insert: ' + error.message);
+				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url], 			
 					 function(tx, result){       
 				     }, 
 					 function(tx, error){
@@ -101,9 +117,10 @@ function RemoteStorage(){
 	var tagFeed="http://feeds.delicious.com/v2/json/veggieboy4000/ssh";
 }
 
-function Bookmark(url, title, tags){
+function Bookmark(url, title, tags, modified){
 	this.url=url;
 	this.title=title;
+	this.modified=modified.slice(0,-1)
 		
 	if (typeof tags == 'string'){
 		this.tags=tags.split(",");
@@ -133,7 +150,7 @@ $(document).ready(function(){
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
 		$.each(bookmarks, function(){
-		    var bmark= new Bookmark(this.u, this.d, this.t)
+		    var bmark= new Bookmark(this.u, this.d, this.t, this.dt)
 			storage.insertBookmark(bmark);
 		});
    	});
