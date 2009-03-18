@@ -6,31 +6,42 @@ function LocalStorage(){
 	this.DB_NAME="overdrive delicious.com";
 	this.db = openDatabase(this.DB_NAME, this.DB_VERSION);
 	this.tableList=new Array();
-	this.tablelist["bookmarks"]="CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)";
+	this.tableList["bookmarks"]="CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)";
 	this.tableList["settings"]="CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)";
 	
 	this.resultQueue;
 	this.displayQueue;
+	
+	for (key in this.tableList)
+	{
+		this.db.transaction(function(tx) {
+		alert(this.tableList[key]);
+			tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) {}, function(tx, error) {
+				tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)",[],
+				function(result) { 
+	                $.jGrowl("table 'bookmarks' created");
+	            });
+
+				tx.executeSql("CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
+				function(result) { 
+	                $.jGrowl("table 'settings' created");
+	            },
+				function(tx, error) { 
+	                $.jGrowl("Could not create tables.");
+	            });
+	        });
+	    });
+	}
+	
 	/**
 	* This block checks if the database exists and creates the necessary tables.
 	*/
-	this.db.transaction(function(tx) {
-        tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) {}, function(tx, error) {
-			tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)",[],
-			function(result) { 
-                $.jGrowl("table 'bookmarks' created");
-            });
-			
-			tx.executeSql("CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
-			function(result) { 
-                $.jGrowl("table 'settings' created");
-            },
-			function(tx, error) { 
-                $.jGrowl("Could not create tables.");
-            });
-        });
-    });
-	
+/**	
+        
+
+
+
+*/	
 	/**
 	* Deletes all local tables.
 	*/
@@ -43,14 +54,14 @@ function LocalStorage(){
 				});
 			}
 		});
-	}
+	};
 	
 	/**
 	* Returns one of the settings values in the local storage.
 	*/ 
 	this.getSetting=function(key){
 		return value;
-	}
+	};
 	
 	/**
 	* Returns one of the settings values in the local storage.
