@@ -5,8 +5,12 @@ function LocalStorage(){
 	this.DB_VERSION="0.1";
 	this.DB_NAME="overdrive delicious.com";
 	this.db = openDatabase(this.DB_NAME, this.DB_VERSION);
-	this.tableList=["bookmarks", "settings"];
+	this.tableList=new Array();
+	this.tablelist["bookmarks"]="CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)";
+	this.tableList["settings"]="CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)";
 	
+	this.resultQueue;
+	this.displayQueue;
 	/**
 	* This block checks if the database exists and creates the necessary tables.
 	*/
@@ -16,7 +20,8 @@ function LocalStorage(){
 			function(result) { 
                 $.jGrowl("table 'bookmarks' created");
             });
-			tx.executeSql("CREATE TABLE settings (id TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
+			
+			tx.executeSql("CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
 			function(result) { 
                 $.jGrowl("table 'settings' created");
             },
@@ -64,14 +69,12 @@ function LocalStorage(){
 	* Inserts a bookmark into the local db.
 	*/
 	this.insertBookmark= function(bmark) {
-		$.jGrowl('date: ' + bmark.modified);
 		this.db.transaction(function(tx){
 			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,?)",
 					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.modified], 			
 				 function(tx, result){       
 			     }, 
 				 function(tx, error){
-			     	 //$.jGrowl('Could not insert: ' + error.message);
 				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url], 			
 					 function(tx, result){       
 				     }, 
@@ -80,6 +83,31 @@ function LocalStorage(){
 				     });
 			     });
 		});
+		
+	/**
+	*
+	*/
+	this.setSetting= function (setting) {
+		
+		if (typeof setting == 'number'){
+			setting+="";
+		} 
+		
+		this.db.transaction(function(tx){
+			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,?)",
+					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.modified], 			
+				 function(tx, result){       
+			     }, 
+				 function(tx, error){
+				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url], 			
+					 function(tx, result){       
+				     }, 
+					 function(tx, error){
+						$.jGrowl('Could not insert or update bookmark: ' + error.message);
+				     });
+			     });
+		});
+	}
 	}
 	
 	/**
@@ -101,7 +129,7 @@ function LocalStorage(){
 						$("#content").empty();
 						for (var i = 0; i < result.rows.length; ++i) {
 							var row = result.rows.item(i);
-							var bmark = new Bookmark(row['url'], row['title'], row['tags']);	
+							var bmark = new Bookmark(row['url'], row['title'], row['tags'], row['modified']);	
 						}
 		            }
 		        }, 
@@ -120,8 +148,12 @@ function RemoteStorage(){
 function Bookmark(url, title, tags, modified){
 	this.url=url;
 	this.title=title;
-	this.modified=modified.slice(0,-1)
-		
+	if (typeof tags == 'string'){
+		modified=modified.slice(0,-1);
+	} 
+	this.modified=new Date(modified);
+	
+			
 	if (typeof tags == 'string'){
 		this.tags=tags.split(",");
 	}
