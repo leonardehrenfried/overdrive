@@ -12,36 +12,24 @@ function LocalStorage(){
 	this.resultQueue;
 	this.displayQueue;
 	
+	/**
+	* This block checks if the tables exists and creates the necessary ones.
+	*/
 	for (key in this.tableList)
 	{
+		//alert(this.tableList[key]);
 		this.db.transaction(function(tx) {
-		alert(this.tableList[key]);
-			tx.executeSql("SELECT COUNT(*) FROM bookmarks", [], function(result) {}, function(tx, error) {
-				tx.executeSql("CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)",[],
+			tx.executeSql("SELECT COUNT(*) FROM ?", [key], function(result) {}, function(tx, error) {
+				alert(window.storage.tableList[key]);
+				tx.executeSql(window.storage.tableList[key],[],
 				function(result) { 
-	                $.jGrowl("table 'bookmarks' created");
+	                $.jGrowl("table '"+key+"' created");
 	            });
 
-				tx.executeSql("CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)", [],
-				function(result) { 
-	                $.jGrowl("table 'settings' created");
-	            },
-				function(tx, error) { 
-	                $.jGrowl("Could not create tables.");
-	            });
 	        });
 	    });
 	}
-	
-	/**
-	* This block checks if the database exists and creates the necessary tables.
-	*/
-/**	
-        
-
-
-
-*/	
+		
 	/**
 	* Deletes all local tables.
 	*/
@@ -74,7 +62,7 @@ function LocalStorage(){
 			});
 		});
 		return value;
-	}
+	};
 	
 	/**
 	* Inserts a bookmark into the local db.
@@ -107,7 +95,8 @@ function LocalStorage(){
 		this.db.transaction(function(tx){
 			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,?)",
 					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.modified], 			
-				 function(tx, result){       
+				 function(tx, result){
+					//nothing so far      
 			     }, 
 				 function(tx, error){
 				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url], 			
@@ -118,8 +107,8 @@ function LocalStorage(){
 				     });
 			     });
 		});
-	}
-	}
+		};
+	};
 	
 	/**
 	* Searches for a bookmark across title, url and tags.
@@ -149,7 +138,7 @@ function LocalStorage(){
 					return;
 			    });
 		});	
-	}
+	};
 }
 
 function RemoteStorage(){
@@ -179,13 +168,13 @@ function Bookmark(url, title, tags, modified){
 		      tagsString+=this+",";
 		    });
 		return tagsString;
-	}
+	};
 }
 
 
 
 $(document).ready(function(){
-    var storage = new LocalStorage();
+    window.storage = new LocalStorage();
 
 	var username="veggieboy4000";
 	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
@@ -193,13 +182,13 @@ $(document).ready(function(){
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
 		$.each(bookmarks, function(){
-		    var bmark= new Bookmark(this.u, this.d, this.t, this.dt)
-			storage.insertBookmark(bmark);
+		    var bmark= new Bookmark(this.u, this.d, this.t, this.dt);
+			window.storage.insertBookmark(bmark);
 		});
    	});
 
 	$(".searchBox").keyup(function (e) {
-		storage.searchBookmarks($(this).attr("value"));
+		window.storage.searchBookmarks($(this).attr("value"));
 	});
 	
 });
