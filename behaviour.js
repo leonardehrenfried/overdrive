@@ -12,23 +12,31 @@ function LocalStorage(){
 	this.resultQueue;
 	this.displayQueue;
 	
+	
+	
 	/**
 	* This block checks if the tables exists and creates the necessary ones.
 	*/
-	for (key in this.tableList)
-	{
-		//alert(this.tableList[key]);
+	this.checkIfTableExists=function (tableName) {
 		this.db.transaction(function(tx) {
-			tx.executeSql("SELECT COUNT(*) FROM ?", [key], function(result) {}, function(tx, error) {
-				alert(window.storage.tableList[key]);
-				tx.executeSql(window.storage.tableList[key],[],
-				function(result) { 
-	                $.jGrowl("table '"+key+"' created");
-	            });
+				
+				tx.executeSql("SELECT COUNT(*) FROM "+tableName, [], function(result) {}, function(tx, error) {
+					alert(error.message);
+					tx.executeSql(window.storage.tableList[tableName],[],
+					function(result) { 
+		                $.jGrowl("table '"+tableName+"' created");
+		            },
+					function(error) {
+						alert("could not create table "+error.message);
+					}
+					);
 
-	        });
-	    });
-	}
+		        });
+		    
+		});
+	};	
+		
+	
 		
 	/**
 	* Deletes all local tables.
@@ -45,36 +53,17 @@ function LocalStorage(){
 	};
 	
 	/**
-	* Returns one of the settings values in the local storage.
-	*/ 
-	this.getSetting=function(key){
-		return value;
-	};
-	
-	/**
-	* Returns one of the settings values in the local storage.
-	*/ 
-	this.setSetting=function(key, value){
-		this.db.transaction(function(tx) {
-			tx.executeSql("SELECT id FROM settings WHERE id=?", [key], 
-			function(result) { }, 
-			function(tx, error) { 
-			});
-		});
-		return value;
-	};
-	
-	/**
 	* Inserts a bookmark into the local db.
 	*/
 	this.insertBookmark= function(bmark) {
 		this.db.transaction(function(tx){
-			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,?)",
-					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.modified], 			
+			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,datetime(?))",
+					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.getSqliteDate()], 			
 				 function(tx, result){       
 			     }, 
 				 function(tx, error){
-				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url], 			
+				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=?, modified=datetime(?) WHERE url=?",
+						[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url, bmark.getSqliteDate()], 			
 					 function(tx, result){       
 				     }, 
 					 function(tx, error){
@@ -82,32 +71,88 @@ function LocalStorage(){
 				     });
 			     });
 		});
-		
+	};	
 	/**
 	*
 	*/
-	this.setSetting= function (setting) {
+	this.setSetting = function (key, value) {
 		
-		if (typeof setting == 'number'){
+		var type;
+		if (typeof value == 'number'){
 			setting+="";
-		} 
+			type=typeof key;
+		}
+		
+		else if (typeof value=='object'){
+			type="date";
+		}
+		
+		else if (typeof value=='boolean'){
+			
+			type=typeof key;
+			if (value)
+			{
+				value="True";
+			}
+			else{
+				value="False";
+			}
+		}
+		
+		else
+		{
+			type=typeof key;
+		}
+		
 		
 		this.db.transaction(function(tx){
-			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,?)",
-					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.modified], 			
+			     tx.executeSql("INSERT INTO settings (key, value, type) VALUES (?,?,?)",
+					[key, value, type], 			
 				 function(tx, result){
-					//nothing so far      
+					$.jGrowl("inserted "+key+":"+value);     
 			     }, 
 				 function(tx, error){
-				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=? WHERE url=?",[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url], 			
+					tx.executeSql("UPDATE settings SET key=?, value=?, type=? WHERE key=?",
+						[key, value, type, key], 			
 					 function(tx, result){       
 				     }, 
 					 function(tx, error){
-						$.jGrowl('Could not insert or update bookmark: ' + error.message);
+						$.jGrowl('Could not insert or update setting: ' + error.message);
 				     });
 			     });
 		});
-		};
+	};
+			
+	/**
+	* Returns one of the settings values in the local storage.
+	*/ 
+	this.getSetting=function(key){
+		this.db.transaction(function(tx){
+			     tx.executeSql("SELECT key,value,type FROM settings WHERE key=?",
+					[key], 			
+				 function(tx, result){
+					if (!result.rows.length){
+						$.jGrowl("could not find the requested setting");
+					}
+
+					else{
+							var value=row['value'];
+							var type=row["type"];
+							
+							if (type=="boolean"){
+								if (value=="True"){
+									value=true;
+								}
+								else{
+									value=false;
+								}
+							}
+		            }
+			     }, 
+				 function(tx, error){
+					$.jGrowl("query wrong:"+error.message);
+			     });
+		});
 	};
 	
 	/**
@@ -118,7 +163,7 @@ function LocalStorage(){
 	{
 		this.db.transaction(function(tx) 
 		{
-			var result=tx.executeSql("SELECT * FROM bookmarks WHERE tags LIKE '%"+term+"%'",[], 
+			var result=tx.executeSql("SELECT * FROM bookmarks WHERE tags LIKE ? OR title LIKE ?",["%"+term+"%","%"+term+"%"], 
 				function(tx, result){
 					if (!result.rows.length){
 						$("#content").empty();
@@ -139,6 +184,14 @@ function LocalStorage(){
 			    });
 		});	
 	};
+	/**
+	*
+	* Constructor block.
+	*/
+	for (key in this.tableList)
+	{
+		this.checkIfTableExists(key);
+	}
 }
 
 function RemoteStorage(){
@@ -148,10 +201,7 @@ function RemoteStorage(){
 function Bookmark(url, title, tags, modified){
 	this.url=url;
 	this.title=title;
-	if (typeof tags == 'string'){
-		modified=modified.slice(0,-1);
-	} 
-	this.modified=new Date(modified);
+	this.modified=modified;
 	
 			
 	if (typeof tags == 'string'){
@@ -161,7 +211,14 @@ function Bookmark(url, title, tags, modified){
 	{
 		this.tags=tags;
 	}
+	
 	$("#content").append("<li><a href='"+this.url+"'>"+this.title+"</a></li>");
+	
+	this.getSqliteDate=function()
+	{
+		return modified.slice(0,-1);
+	};
+	
 	this.getTagsAsString=function () {
 		var tagsString="";
 		$.each(this.tags, function() {
@@ -175,7 +232,6 @@ function Bookmark(url, title, tags, modified){
 
 $(document).ready(function(){
     window.storage = new LocalStorage();
-
 	var username="veggieboy4000";
 	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
 	
@@ -185,10 +241,18 @@ $(document).ready(function(){
 		    var bmark= new Bookmark(this.u, this.d, this.t, this.dt);
 			window.storage.insertBookmark(bmark);
 		});
+		var date=new Date();
+		
+		window.storage.setSetting("lastUpdate", date);
+		window.storage.setSetting("fullSync", true);
+		
    	});
 
 	$(".searchBox").keyup(function (e) {
 		window.storage.searchBookmarks($(this).attr("value"));
 	});
+	
+
+	window.storage.setSetting("username", username);
 	
 });
