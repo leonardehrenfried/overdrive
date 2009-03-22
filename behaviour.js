@@ -11,6 +11,7 @@ function LocalStorage(){
 	
 	this.resultQueue;
 	this.displayQueue;
+	this.settings=new Array();
 	
 	
 	
@@ -76,7 +77,7 @@ function LocalStorage(){
 	*
 	*/
 	this.setSetting = function (key, value) {
-		
+		this.settings[key]=value;
 		var type;
 		if (typeof value == 'number'){
 			setting+="";
@@ -112,6 +113,7 @@ function LocalStorage(){
 					$.jGrowl("inserted "+key+":"+value);     
 			     }, 
 				 function(tx, error){
+					//$.jGrowl('Could not insert setting: ' + error.message);
 					tx.executeSql("UPDATE settings SET key=?, value=?, type=? WHERE key=?",
 						[key, value, type, key], 			
 					 function(tx, result){       
@@ -126,27 +128,33 @@ function LocalStorage(){
 	/**
 	* Returns one of the settings values in the local storage.
 	*/ 
-	this.getSetting=function(key){
+	this.getSettings=function(){
 		this.db.transaction(function(tx){
-			     tx.executeSql("SELECT key,value,type FROM settings WHERE key=?",
-					[key], 			
+			     tx.executeSql("SELECT key,value,type FROM settings",
+					[], 			
 				 function(tx, result){
 					if (!result.rows.length){
 						$.jGrowl("could not find the requested setting");
 					}
 
 					else{
-							var value=row['value'];
-							var type=row["type"];
-							
-							if (type=="boolean"){
-								if (value=="True"){
-									value=true;
+							for (var i = 0; i < result.rows.length; ++i) {
+								var row = result.rows.item(i);
+								var value=row['value'];
+								var type=row['type'];
+
+								if (type=="boolean"){
+									if (value=="True"){
+										value=true;
+									}
+									else{
+										value=false;
+									}
 								}
-								else{
-									value=false;
-								}
-							}
+								$.jGrowl(row['key']+":"+value);
+								window.storage.settings[row[key]]=value;
+								
+							}							
 		            }
 			     }, 
 				 function(tx, error){
@@ -231,10 +239,11 @@ function Bookmark(url, title, tags, modified){
 
 
 $(document).ready(function(){
-    window.storage = new LocalStorage();
+
+	window.storage = new LocalStorage();
 	var username="veggieboy4000";
 	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
-	
+	alert("seeting");
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
 		$.each(bookmarks, function(){
@@ -253,6 +262,7 @@ $(document).ready(function(){
 	});
 	
 
-	window.storage.setSetting("username", username);
+	window.storage.getSettings();
+
 	
 });
