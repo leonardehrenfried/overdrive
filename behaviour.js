@@ -22,7 +22,6 @@ function LocalStorage(){
 		this.db.transaction(function(tx) {
 				
 				tx.executeSql("SELECT COUNT(*) FROM "+tableName, [], function(result) {}, function(tx, error) {
-					alert(error.message);
 					tx.executeSql(window.storage.tableList[tableName],[],
 					function(result) { 
 		                $.jGrowl("table '"+tableName+"' created");
@@ -78,7 +77,7 @@ function LocalStorage(){
 	*/
 	this.setSetting = function (key, value) {
 		this.settings[key]=value;
-		var type;
+		var type=typeof value;
 		if (typeof value == 'number'){
 			setting+="";
 			type=typeof key;
@@ -88,9 +87,9 @@ function LocalStorage(){
 			type="date";
 		}
 		
-		else if (typeof value=='boolean'){
+		else if (type=='boolean'){
 			
-			type=typeof key;
+			
 			if (value)
 			{
 				value="True";
@@ -102,7 +101,7 @@ function LocalStorage(){
 		
 		else
 		{
-			type=typeof key;
+			type=typeof value;
 		}
 		
 		
@@ -110,13 +109,13 @@ function LocalStorage(){
 			     tx.executeSql("INSERT INTO settings (key, value, type) VALUES (?,?,?)",
 					[key, value, type], 			
 				 function(tx, result){
-					$.jGrowl("inserted "+key+":"+value);     
+					window.storage.settings[key]=value;     
 			     }, 
 				 function(tx, error){
-					//$.jGrowl('Could not insert setting: ' + error.message);
 					tx.executeSql("UPDATE settings SET key=?, value=?, type=? WHERE key=?",
 						[key, value, type, key], 			
-					 function(tx, result){       
+					 function(tx, result){
+						window.storage.settings[key]=value;       
 				     }, 
 					 function(tx, error){
 						$.jGrowl('Could not insert or update setting: ' + error.message);
@@ -151,8 +150,12 @@ function LocalStorage(){
 										value=false;
 									}
 								}
+								else if (type=='date')
+								{
+									value=Date.parse(value);
+								}
 								$.jGrowl(row['key']+":"+value);
-								window.storage.settings[row[key]]=value;
+								window.storage.settings[row['key']]=value;
 								
 							}							
 		            }
@@ -171,7 +174,7 @@ function LocalStorage(){
 	{
 		this.db.transaction(function(tx) 
 		{
-			var result=tx.executeSql("SELECT * FROM bookmarks WHERE tags LIKE ? OR title LIKE ?",["%"+term+"%","%"+term+"%"], 
+			var result=tx.executeSql("SELECT * FROM bookmarks WHERE tags LIKE ? OR title LIKE ? ORDER BY modified DESC",["%"+term+"%","%"+term+"%"], 
 				function(tx, result){
 					if (!result.rows.length){
 						$("#content").empty();
@@ -192,6 +195,31 @@ function LocalStorage(){
 			    });
 		});	
 	};
+	this.getAllBookmarks=function(){
+		this.db.transaction(function(tx) 
+		{
+			var result=tx.executeSql("SELECT * FROM bookmarks ORDER BY modified DESC",[], 
+				function(tx, result){
+					if (!result.rows.length){
+						$("#content").empty();
+						return false;
+					}
+				
+					else{
+						$("#content").empty();
+						for (var i = 0; i < result.rows.length; ++i) {
+							var row = result.rows.item(i);
+							var bmark = new Bookmark(row['url'], row['title'], row['tags'], row['modified']);	
+						}
+		            }
+		        }, 
+				function(tx, error){
+			    	$.jGrowl('Failed to retrieve bookmarks from database - ' + error.message);
+					return;
+			    });
+		});
+	};
+	
 	/**
 	*
 	* Constructor block.
@@ -236,14 +264,9 @@ function Bookmark(url, title, tags, modified){
 	};
 }
 
-
-
-$(document).ready(function(){
-
-	window.storage = new LocalStorage();
+function sync () {
 	var username="veggieboy4000";
 	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
-	alert("seeting");
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
 		$.each(bookmarks, function(){
@@ -256,13 +279,24 @@ $(document).ready(function(){
 		window.storage.setSetting("fullSync", true);
 		
    	});
+	
+}
+
+$(document).ready(function(){
+
+	window.storage = new LocalStorage();
+	window.storage.getAllBookmarks();
+	window.storage.getSettings();
+	//wait one second for the DB to be initialised
+	window.setTimeout(function(){
+			if (!window.storage.setting["fullSync"])
+			{
+				sync();
+			}
+			
+		}, 500);
 
 	$(".searchBox").keyup(function (e) {
 		window.storage.searchBookmarks($(this).attr("value"));
-	});
-	
-
-	window.storage.getSettings();
-
-	
+	});	
 });
