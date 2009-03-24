@@ -15,7 +15,7 @@ li
 }
 .mainContainer
 {
-	margin:auto;
+	float:left;
 	width: 600px;
 }
 
@@ -40,6 +40,20 @@ li
 	margin:0;
 }
 
+#logoContainer{
+	float:left;
+	padding:15px;
+	margin:5px;
+	background-color:blue;
+	color:white;
+	-webkit-border-top-left-radius:5px;
+	-webkit-border-top-right-radius:5px;
+	-webkit-border-bottom-right-radius:5px;
+	-webkit-border-bottom-left-radius:5px;
+}
+#logoContainer div{
+	font-size:small;
+}
 .searchBox {
 		-webkit-border-bottom-left-radius: 11px;
 		-webkit-border-bottom-right-radius: 11px;

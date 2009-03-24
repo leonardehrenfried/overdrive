@@ -154,7 +154,7 @@ function LocalStorage(){
 								{
 									value=Date.parse(value);
 								}
-								$.jGrowl(row['key']+":"+value);
+								
 								window.storage.settings[row['key']]=value;
 								
 							}							
