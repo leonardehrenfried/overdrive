@@ -155,8 +155,7 @@ function LocalStorage(){
 									value=Date.parse(value);
 								}
 								
-								window.storage.settings[row['key']]=value;
-								
+								window.storage.settings[row['key']]=value;	
 							}							
 		            }
 			     }, 
@@ -180,7 +179,6 @@ function LocalStorage(){
 						$("#content").empty();
 						return false;
 					}
-				
 					else{
 						$("#content").empty();
 						for (var i = 0; i < result.rows.length; ++i) {
@@ -264,9 +262,9 @@ function Bookmark(url, title, tags, modified){
 	};
 }
 
-function sync () {
+function sync (count) {
 	var username="veggieboy4000";
-	var url="http://feeds.delicious.com/v1/json/"+username+"?raw&count=100";
+	var url="http://feeds.delicious.com/v1/json/"+window.storage.settings['username']+"?raw&count="+count;
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
 		$.each(bookmarks, function(){
@@ -285,13 +283,34 @@ function sync () {
 $(document).ready(function(){
 
 	window.storage = new LocalStorage();
-	window.storage.getAllBookmarks();
+	window.storage.setSetting("username","veggieboy4000");
 	window.storage.getSettings();
-	//wait one second for the DB to be initialised
+	window.storage.getAllBookmarks();
+	// intialise the user interface with variable from the db, uses a XHTML tag with the id of the settings in
+	// question
 	window.setTimeout(function(){
-			if (!window.storage.setting["fullSync"])
+			var uiFields=["username"];
+			for (i=0; i<uiFields.length; i++)
 			{
-				sync();
+				$("#"+uiFields[i]).text(window.storage.settings[uiFields[i]]);
+			}
+			
+		}, 150);
+	
+	//wait for 500ms for the DB to be initialised, then start syncing with delicious.com
+	window.setTimeout(function(){
+			if (!window.storage.settings["fullSync"])
+			{
+				sync(100);
+			}
+			
+			var mins=13;//minutes in between syncs
+			var lastUpdate=new Date(window.storage.settings["lastUpdate"]+(60000*mins));
+			var now=new Date();
+			
+			if (lastUpdate<now)
+			{
+				sync(20); //get the last 20 bookmarks
 			}
 			
 		}, 500);
