@@ -101,6 +101,33 @@ li
 		word-spacing: 0px;
 	}
 
+/* simpleModal styles */
+	
+#simplemodal-overlay {
+  background-color:#000;
+  cursor:wait;
+}
+
+#simplemodal-container {
+  height:400px;
+  width:600px;
+  background-color:#fff;
+  border:3px solid #ccc;
+  padding:1em;
+}
+
+#simplemodal-container a.modalCloseImg {
+  background:url(x.png) no-repeat;
+  width:25px;
+  height:29px;
+  display:inline;
+  z-index:3200;
+  position:absolute;
+  top:-14px;
+  right:-18px;
+  cursor:pointer;
+}
+
 /**  jGrowl styles **/
 
 div.jGrowl {

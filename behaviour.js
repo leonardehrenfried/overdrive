@@ -8,7 +8,7 @@ function LocalStorage(){
 	this.tableList=new Array();
 	this.tableList["bookmarks"]="CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)";
 	this.tableList["settings"]="CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)";
-	
+	this.tableList["tags"]="CREATE TABLE tags (tag TEXT NOT NULL UNIQUE, visited INT)";
 	this.resultQueue;
 	this.displayQueue;
 	this.settings=new Array();
@@ -281,7 +281,18 @@ function sync (count) {
 }
 
 $(document).ready(function(){
-
+	// Error message for browsers that don't support HTML5 offline storage
+	try{
+		openDatabase("overdrive delicious.com", "0.1");
+	}
+	catch(err){
+		$.get("error.html", function(data){
+		  $("#errorConsole").empty().append(data);
+		});
+		$("#errorConsole").modal();
+		
+		// (err);
+	}
 	window.storage = new LocalStorage();
 	window.storage.setSetting("username","veggieboy4000");
 	window.storage.getSettings();
