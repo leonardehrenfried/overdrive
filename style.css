@@ -97,9 +97,12 @@ li
 		text-indent: 0px;
 		text-shadow: none;
 		text-transform: none;
-		width: 600px;
+
 		word-spacing: 0px;
 	}
+.big {
+	width: 600px;
+}
 
 /* simpleModal styles */
 	
@@ -110,7 +113,7 @@ li
 
 #simplemodal-container {
   height:400px;
-  width:600px;
+  width:400px;
   background-color:#fff;
   border:3px solid #ccc;
   padding:1em;

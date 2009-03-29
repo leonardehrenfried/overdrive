@@ -14,7 +14,6 @@ function LocalStorage(){
 	this.settings=new Array();
 	
 	
-	
 	/**
 	* This block checks if the tables exists and creates the necessary ones.
 	*/
@@ -280,22 +279,48 @@ function sync (count) {
 	
 }
 
+
 $(document).ready(function(){
-	// Error message for browsers that don't support HTML5 offline storage
+	
 	try{
-		openDatabase("overdrive delicious.com", "0.1");
+		window.storage = new LocalStorage();
 	}
 	catch(err){
+		// Error message for browsers that don't support HTML5 offline storage
 		$.get("error.html", function(data){
 		  $("#errorConsole").empty().append(data);
 		});
 		$("#errorConsole").modal();
-		
-		// (err);
 	}
-	window.storage = new LocalStorage();
-	window.storage.setSetting("username","veggieboy4000");
 	window.storage.getSettings();
+	
+	// if the user hasn't entered the username yet
+	window.setTimeout(function(){
+		if (window.storage.settings["username"]==undefined){
+			$.get("dataentry.html", function(data){
+				$("#errorConsole").empty().append(data);
+				// create the special case for sqlForms, their elements will not be submitted but stored in the db 
+				$(":submit").click(function (){
+				var form=$(this).parent();
+				form.children().each(function (){
+				        if ($(this).attr("type")!="submit" && $(this).hasClass("sql"))						{
+							var key=$(this).attr("name");
+							var value=$(this).attr("value");
+							window.storage.setSetting(key, value);						
+						}
+				});
+				$.modal.close();
+				$("#errorConsole").empty();
+				window.location.reload();
+				});
+			});
+			$("#errorConsole").modal();
+		}
+	}, 150);
+	
+	
+	
+	
 	window.storage.getAllBookmarks();
 	// intialise the user interface with variable from the db, uses a XHTML tag with the id of the settings in
 	// question
@@ -328,5 +353,5 @@ $(document).ready(function(){
 
 	$(".searchBox").keyup(function (e) {
 		window.storage.searchBookmarks($(this).attr("value"));
-	});	
+	});
 });
