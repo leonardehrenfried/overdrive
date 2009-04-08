@@ -296,7 +296,7 @@ $(document).ready(function(){
 	
 	// if the user hasn't entered the username yet
 	window.setTimeout(function(){
-		if (window.storage.settings["username"]==undefined){
+		if (window.storage.settings["username"]===undefined){
 			$.get("dataentry.html", function(data){
 				$("#errorConsole").empty().append(data);
 				// create the special case for sqlForms, their elements will not be submitted but stored in the db 
@@ -335,7 +335,7 @@ $(document).ready(function(){
 	
 	//wait for 500ms for the DB to be initialised, then start syncing with delicious.com
 	window.setTimeout(function(){
-			if (!window.storage.settings["fullSync"])
+			if (!window.storage.settings["fullSync"] && window.storage.settings["username"]!=undefined)
 			{
 				sync(100);
 			}

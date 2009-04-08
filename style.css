@@ -100,6 +100,62 @@ li
 
 		word-spacing: 0px;
 	}
+	
+.bigButton{
+	-webkit-appearance: none;
+	-webkit-background-clip: border;
+	-webkit-background-origin: padding;
+	-webkit-border-bottom-left-radius: 11px;
+	-webkit-border-bottom-right-radius: 11px;
+	-webkit-border-top-left-radius: 11px;
+	-webkit-border-top-right-radius: 11px;
+	-webkit-box-align: center;
+	-webkit-box-sizing: border-box;
+	-webkit-rtl-ordering: logical;
+	-webkit-user-select: text;
+	background-attachment: scroll;
+	background-color: rgb(204, 204, 204);
+	background-image: none;
+	background-repeat: repeat;
+	border-bottom-color: rgb(229, 229, 229);
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	border-left-color: rgb(229, 229, 229);
+	border-left-style: solid;
+	border-left-width: 1px;
+	border-right-color: rgb(229, 229, 229);
+	border-right-style: solid;
+	border-right-width: 1px;
+	border-top-color: rgb(229, 229, 229);
+	border-top-style: solid;
+	border-top-width: 1px;
+	color: rgb(51, 51, 51);
+	cursor: pointer;
+	display: inline-block;
+	font-family: 'Lucida Grande';
+	font-size: 14px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: normal;
+	height: 39px;
+	letter-spacing: normal;
+	line-height: normal;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-top: 30px;
+	padding-bottom: 10px;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-top: 10px;
+	text-align: center;
+	text-indent: 0px;
+	text-shadow: none;
+	text-transform: none;
+	white-space: pre;
+	width: 67px;
+	word-spacing: 0px;
+}
 .big {
 	width: 600px;
 }
