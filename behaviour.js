@@ -5,14 +5,13 @@ function LocalStorage(){
 	this.DB_VERSION="0.1";
 	this.DB_NAME="overdrive delicious.com";
 	this.db = openDatabase(this.DB_NAME, this.DB_VERSION);
-	this.tableList=new Array();
+	this.tableList=[];
 	this.tableList["bookmarks"]="CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)";
 	this.tableList["settings"]="CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)";
-	this.tableList["tags"]="CREATE TABLE tags (tag TEXT NOT NULL UNIQUE, visited INT)";
+	this.tableList["tags"]="CREATE TABLE tags (tag TEXT NOT NULL UNIQUE, bookmarks INT, visited INT)";
 	this.resultQueue;
 	this.displayQueue;
 	this.settings=new Array();
-	
 	
 	/**
 	* This block checks if the tables exists and creates the necessary ones.
@@ -21,7 +20,7 @@ function LocalStorage(){
 		this.db.transaction(function(tx) {
 				
 				tx.executeSql("SELECT COUNT(*) FROM "+tableName, [], function(result) {}, function(tx, error) {
-					tx.executeSql(window.storage.tableList[tableName],[],
+					tx.executeSql(overdrive.storage.tableList[tableName],[],
 					function(result) { 
 		                $.jGrowl("table '"+tableName+"' created");
 		            },
@@ -108,13 +107,13 @@ function LocalStorage(){
 			     tx.executeSql("INSERT INTO settings (key, value, type) VALUES (?,?,?)",
 					[key, value, type], 			
 				 function(tx, result){
-					window.storage.settings[key]=value;     
+					overdrive.storage.settings[key]=value;     
 			     }, 
 				 function(tx, error){
 					tx.executeSql("UPDATE settings SET key=?, value=?, type=? WHERE key=?",
 						[key, value, type, key], 			
 					 function(tx, result){
-						window.storage.settings[key]=value;       
+						overdrive.storage.settings[key]=value;       
 				     }, 
 					 function(tx, error){
 						$.jGrowl('Could not insert or update setting: ' + error.message);
@@ -126,7 +125,7 @@ function LocalStorage(){
 	/**
 	* Returns one of the settings values in the local storage.
 	*/ 
-	this.getSettings=function(){
+	this.getSettings=function(callback){
 		this.db.transaction(function(tx){
 			     tx.executeSql("SELECT key,value,type FROM settings",
 					[], 			
@@ -154,9 +153,16 @@ function LocalStorage(){
 									value=Date.parse(value);
 								}
 								
-								window.storage.settings[row['key']]=value;	
+								overdrive.storage.settings[row['key']]=value;	
 							}							
 		            }
+					/*
+					* Executes code after data has been fetched from the DB
+					*/
+					if (callback!==undefined)
+					{
+						callback();
+					}
 			     }, 
 				 function(tx, error){
 					$.jGrowl("query wrong:"+error.message);
@@ -217,6 +223,44 @@ function LocalStorage(){
 		});
 	};
 	
+	this.insertTag=function (tag, bookmarks) {
+		this.db.transaction(function(tx){
+				tx.executeSql("INSERT INTO tags (tag, bookmarks) VALUES(?,?)",
+					[tag, bookmarks], 			
+				 function(tx, result){
+					 //$.jGrowl("tag inserted");				
+		            }, 
+				 function(tx, error){
+					//$.jGrowl("Could not insert tag into database:"+error.message);
+			     });
+		});
+	};
+	
+	/*
+	* Return the next tag that has not been visited yet
+	*/
+	this.getNextTag=function(callback) {
+		var tagString="SELECT tag, bookmarks FROM tags WHERE visited IS NULL ORDER BY bookmarks DESC LIMIT 1";
+		
+		this.db.transaction(function(tx){
+				tx.executeSql(tagString,
+					[], 			
+				 function(tx, result){
+						if (!result.rows.length){
+							$.jGrowl("Downloaded all bookmarks.");
+						}
+
+						else{
+							var row = result.rows.item(0);
+							alert(row["tag"]);	
+			            }			
+		            }, 
+				 function(tx, error){
+					//$.jGrowl("Could not insert tag into database:"+error.message);
+			     });
+		});
+	};
+	
 	/**
 	*
 	* Constructor block.
@@ -226,9 +270,28 @@ function LocalStorage(){
 		this.checkIfTableExists(key);
 	}
 }
-
+/*
+* Object that connects to the delicious server
+*/
 function RemoteStorage(){
-	var tagFeed="http://feeds.delicious.com/v2/json/veggieboy4000/ssh";
+	
+	
+	this.getAllTags=function (callback) {
+		var tagFeed="http://feeds.delicious.com/v2/json/tags/"+overdrive.storage.settings["username"];
+		var array=[];
+		$.getJSON(tagFeed+"?callback=?", function (tags){
+				for (key in tags){
+					callback(key, tags[key]);
+				}
+			}
+		);
+	};
+	
+	this.getBookmarksFromTag=function (tag, callback) {
+		
+	};
+	
+	
 }
 
 function Bookmark(url, title, tags, modified){
@@ -261,29 +324,32 @@ function Bookmark(url, title, tags, modified){
 	};
 }
 
-function sync (count) {
+var overdrive=new Object();
+/*
+* Download the latest bookmarks from delicious
+*/
+overdrive.sync=function(count) {
 	var username="veggieboy4000";
-	var url="http://feeds.delicious.com/v1/json/"+window.storage.settings['username']+"?raw&count="+count;
+	var url="http://feeds.delicious.com/v1/json/"+overdrive.storage.settings['username']+"?raw&count="+count;
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
 		$.each(bookmarks, function(){
-		    var bmark= new Bookmark(this.u, this.d, this.t, this.dt);
-			window.storage.insertBookmark(bmark);
+		    var bmark=new Bookmark(this.u, this.d, this.t, this.dt);
+			overdrive.storage.insertBookmark(bmark);
 		});
 		var date=new Date();
-		
-		window.storage.setSetting("lastUpdate", date);
-		window.storage.setSetting("fullSync", true);
-		
+		overdrive.storage.setSetting("lastUpdate", date);
+		overdrive.storage.setSetting("fullSync", true);
    	});
-	
-}
+};
+
 
 
 $(document).ready(function(){
 	
 	try{
-		window.storage = new LocalStorage();
+		overdrive.storage = new LocalStorage();
+		overdrive.remote=new RemoteStorage();
 	}
 	catch(err){
 		// Error message for browsers that don't support HTML5 offline storage
@@ -292,22 +358,22 @@ $(document).ready(function(){
 		});
 		$("#errorConsole").modal();
 	}
-	window.storage.getSettings();
-	
-	// if the user hasn't entered the username yet
-	window.setTimeout(function(){
-		if (window.storage.settings["username"]===undefined){
+	// callbacks to this will execute after all the settings have been fetched from the db
+	overdrive.storage.getSettings(function (argument) {
+		
+		// if the user hasn't entered the username yet
+		if (overdrive.storage.settings["username"]===undefined){	
 			$.get("dataentry.html", function(data){
 				$("#errorConsole").empty().append(data);
 				// create the special case for sqlForms, their elements will not be submitted but stored in the db 
 				$(":submit").click(function (){
-				var form=$(this).parent();
-				form.children().each(function (){
-				        if ($(this).attr("type")!="submit" && $(this).hasClass("sql"))						{
-							var key=$(this).attr("name");
-							var value=$(this).attr("value");
-							window.storage.setSetting(key, value);						
-						}
+					var form=$(this).parent();
+					form.children().each(function (){
+					        if ($(this).attr("type")!="submit" && $(this).hasClass("sql")){
+								var key=$(this).attr("name");
+								var value=$(this).attr("value");
+								overdrive.storage.setSetting(key, value);						
+							}
 				});
 				$.modal.close();
 				$("#errorConsole").empty();
@@ -316,42 +382,59 @@ $(document).ready(function(){
 			});
 			$("#errorConsole").modal();
 		}
-	}, 150);
-	
-	
-	
-	
-	window.storage.getAllBookmarks();
-	// intialise the user interface with variable from the db, uses a XHTML tag with the id of the settings in
-	// question
-	window.setTimeout(function(){
-			var uiFields=["username"];
-			for (i=0; i<uiFields.length; i++)
-			{
-				$("#"+uiFields[i]).text(window.storage.settings[uiFields[i]]);
-			}
+		
+		// intialise the user interface with variable from the db, uses a XHTML tag with the id of the settings in
+		// question
+		var uiFields=["username"];
+		for (i=0; i<uiFields.length; i++)
+		{
+			$("#"+uiFields[i]).text(overdrive.storage.settings[uiFields[i]]);
+		}
+		
+		// if the tags have not been downloaded yet
+		if (!overdrive.storage.settings["tagsDownloaded"])
+		{
+			$.jGrowl("Downloading tags from delicious.com"); 
 			
-		}, 150);
+			var tags=overdrive.remote.getAllTags(function (tag, bookmarks) {
+					overdrive.storage.insertTag(tag, bookmarks);
+			});
+			overdrive.storage.setSetting("tagsDownloaded", true);
+		}
+		
+		if (!overdrive.storage.settings["bookmarksComplete"])
+		{
+			overdrive.storage.getNextTag(function () {
+				alert("hello");
+			});
+		}
+		
+	});
 	
+	overdrive.storage.getAllBookmarks();
+	
+
+			
 	//wait for 500ms for the DB to be initialised, then start syncing with delicious.com
 	window.setTimeout(function(){
-			if (!window.storage.settings["fullSync"] && window.storage.settings["username"]!=undefined)
+			if (!overdrive.storage.settings["fullSync"] && overdrive.storage.settings["username"]!=undefined)
 			{
-				sync(100);
+				overdrive.sync(100);
 			}
 			
 			var mins=13;//minutes in between syncs
-			var lastUpdate=new Date(window.storage.settings["lastUpdate"]+(60000*mins));
+			var lastUpdate=new Date(overdrive.storage.settings["lastUpdate"]+(60000*mins));
 			var now=new Date();
 			
 			if (lastUpdate<now)
 			{
-				sync(20); //get the last 20 bookmarks
+				overdrive.sync(20); //get the last 20 bookmarks
 			}
 			
 		}, 500);
 
 	$(".searchBox").keyup(function (e) {
-		window.storage.searchBookmarks($(this).attr("value"));
+		overdrive.storage.searchBookmarks($(this).attr("value"));
 	});
+	
 });
