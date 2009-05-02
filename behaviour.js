@@ -8,7 +8,7 @@ function LocalStorage(){
 	this.tableList=[];
 	this.tableList["bookmarks"]="CREATE TABLE bookmarks (url TEXT NOT NULL UNIQUE, title TEXT, tags TEXT, modified DATETIME)";
 	this.tableList["settings"]="CREATE TABLE settings (key TEXT NOT NULL UNIQUE, type TEXT, value TEXT)";
-	this.tableList["tags"]="CREATE TABLE tags (tag TEXT NOT NULL UNIQUE, bookmarks INT, visited INT)";
+	this.tableList["tags"]="CREATE TABLE tags (tag TEXT NOT NULL UNIQUE, amount INT, visited INT)";
 	this.resultQueue;
 	this.displayQueue;
 	this.settings=new Array();
@@ -225,13 +225,13 @@ function LocalStorage(){
 	
 	this.insertTag=function (tag, bookmarks) {
 		this.db.transaction(function(tx){
-				tx.executeSql("INSERT INTO tags (tag, bookmarks) VALUES(?,?)",
+				tx.executeSql("INSERT INTO tags (tag, amount) VALUES(?,?)",
 					[tag, bookmarks], 			
 				 function(tx, result){
-					 //$.jGrowl("tag inserted");				
+					 //$.jGrowl("tag inserted:"+result);				
 		            }, 
 				 function(tx, error){
-					//$.jGrowl("Could not insert tag into database:"+error.message);
+					$.jGrowl("Could not insert tag into database:"+error.message);
 			     });
 		});
 	};
@@ -240,27 +240,41 @@ function LocalStorage(){
 	* Return the next tag that has not been visited yet
 	*/
 	this.getNextTag=function(callback) {
-		var tagString="SELECT tag, bookmarks FROM tags WHERE visited IS NULL ORDER BY bookmarks DESC LIMIT 1";
+		var tagString="SELECT tag, amount FROM tags WHERE visited IS NULL ORDER BY amount DESC LIMIT 1";
 		
 		this.db.transaction(function(tx){
 				tx.executeSql(tagString,
 					[], 			
 				 function(tx, result){
+						
 						if (!result.rows.length){
-							$.jGrowl("Downloaded all bookmarks.");
+							$.jGrowl("No tags to fetch.");	
 						}
 
 						else{
 							var row = result.rows.item(0);
-							alert(row["tag"]);	
+							callback(row["tag"]);
 			            }			
 		            }, 
 				 function(tx, error){
-					//$.jGrowl("Could not insert tag into database:"+error.message);
+					$.jGrowl("Could not fetch tag from database: "+error.message);
 			     });
 		});
 	};
 	
+	this.markTagAsVisited=function(tag){
+		var sql="UPDATE tags SET visited=1 WHERE tag=?";
+		this.db.transaction(function(tx){
+				tx.executeSql(sql,
+					[tag], 			
+				 function(tx, result){
+					$.jGrowl("Downloaded bookmarks for tag'"+tag+"'.");		
+		            }, 
+				 function(tx, error){
+					$.jGrowl("Could not mark tag as visited: "+error.message);
+			     });
+		});
+	};
 	/**
 	*
 	* Constructor block.
@@ -287,11 +301,35 @@ function RemoteStorage(){
 		);
 	};
 	
-	this.getBookmarksFromTag=function (tag, callback) {
-		
+	this.getBookmarksFromTag=function (tag) {
+		var tagFeed="http://feeds.delicious.com/v2/json/"+overdrive.storage.settings["username"]+"/"+tag;
+		this.getBookmarks(	tagFeed,
+							function (bmark) { //processor function
+								overdrive.storage.insertBookmark(bmark);
+							},
+							function (tag) {
+								$.jGrowl("inserted bookmark"); //onSuccess function
+								overdrive.storage.markTagAsVisited(tag);
+							}
+							);
 	};
-	
-	
+	/*
+	* All purpose fetch function for bookmarks
+	* @param url a String
+	* @param processor a function that is called with the bookmark as the first argument
+	* @param success 
+	*/
+	this.getBookmarks=function (url, processor, success) {		
+		var tag=url.split('/').reverse()[0];//get the tag from the url
+		$.getJSON(url+"?callback=?", function(bookmarks){
+			$.jGrowl("Fetching additional bookmarks from delicious.com.");
+			$.each(bookmarks, function(){
+			    var bmark=new Bookmark(this.u, this.d, this.t, this.dt);
+				processor(bmark);
+			});
+			success(tag);
+		});
+	};	
 }
 
 function Bookmark(url, title, tags, modified){
@@ -329,7 +367,6 @@ var overdrive=new Object();
 * Download the latest bookmarks from delicious
 */
 overdrive.sync=function(count) {
-	var username="veggieboy4000";
 	var url="http://feeds.delicious.com/v1/json/"+overdrive.storage.settings['username']+"?raw&count="+count;
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
@@ -358,6 +395,7 @@ $(document).ready(function(){
 		});
 		$("#errorConsole").modal();
 	}
+	
 	// callbacks to this will execute after all the settings have been fetched from the db
 	overdrive.storage.getSettings(function (argument) {
 		
@@ -402,19 +440,13 @@ $(document).ready(function(){
 			overdrive.storage.setSetting("tagsDownloaded", true);
 		}
 		
-		if (!overdrive.storage.settings["bookmarksComplete"])
-		{
-			overdrive.storage.getNextTag(function () {
-				alert("hello");
-			});
-		}
-		
+		overdrive.storage.getNextTag(function (tag) {
+				overdrive.remote.getBookmarksFromTag(tag);
+		});
 	});
 	
 	overdrive.storage.getAllBookmarks();
-	
-
-			
+		
 	//wait for 500ms for the DB to be initialised, then start syncing with delicious.com
 	window.setTimeout(function(){
 			if (!overdrive.storage.settings["fullSync"] && overdrive.storage.settings["username"]!=undefined)
