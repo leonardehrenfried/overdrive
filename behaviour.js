@@ -248,7 +248,7 @@ function LocalStorage(){
 				 function(tx, result){
 						
 						if (!result.rows.length){
-							$.jGrowl("No tags to fetch.");	
+							overdrive.storage.setSetting("bookmarksComplete", true);	
 						}
 
 						else{
@@ -268,7 +268,7 @@ function LocalStorage(){
 				tx.executeSql(sql,
 					[tag], 			
 				 function(tx, result){
-					$.jGrowl("Downloaded bookmarks for tag'"+tag+"'.");		
+					//$.jGrowl("Downloaded bookmarks for tag'"+tag+"'.");		
 		            }, 
 				 function(tx, error){
 					$.jGrowl("Could not mark tag as visited: "+error.message);
@@ -308,7 +308,7 @@ function RemoteStorage(){
 								overdrive.storage.insertBookmark(bmark);
 							},
 							function (tag) {
-								$.jGrowl("inserted bookmark"); //onSuccess function
+								//$.jGrowl("inserted bookmark"); //onSuccess function
 								overdrive.storage.markTagAsVisited(tag);
 							}
 							);
@@ -322,7 +322,7 @@ function RemoteStorage(){
 	this.getBookmarks=function (url, processor, success) {		
 		var tag=url.split('/').reverse()[0];//get the tag from the url
 		$.getJSON(url+"?callback=?", function(bookmarks){
-			$.jGrowl("Fetching additional bookmarks from delicious.com.");
+			//$.jGrowl("Fetching bookmarks with tag '"+tag+"' from delicious.com.");
 			$.each(bookmarks, function(){
 			    var bmark=new Bookmark(this.u, this.d, this.t, this.dt);
 				processor(bmark);
@@ -440,9 +440,25 @@ $(document).ready(function(){
 			overdrive.storage.setSetting("tagsDownloaded", true);
 		}
 		
-		overdrive.storage.getNextTag(function (tag) {
-				overdrive.remote.getBookmarksFromTag(tag);
-		});
+		/*
+		* Starts the the download of all bookmarks through the tag feed
+		*/
+		overdrive.startBookmarkTimeout=function () {
+			overdrive.storage.getNextTag(function (tag) {
+					overdrive.remote.getBookmarksFromTag(tag);
+			});
+			
+			if (overdrive.storage.settings["bookmarksComplete"]===undefined){
+				window.setTimeout(function () {
+					overdrive.startBookmarkTimeout();
+				},2000);
+			}
+		};
+		
+		window.setTimeout(function (argument) {
+			overdrive.startBookmarkTimeout();
+		},2000);
+
 	});
 	
 	overdrive.storage.getAllBookmarks();

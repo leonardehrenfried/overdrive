@@ -17,6 +17,7 @@ li
 {
 	float:left;
 	width: 600px;
+	margin:5px;
 }
 
 #footerMenu
@@ -44,21 +45,18 @@ li
 	float:left;
 	padding:15px;
 	margin:5px;
-	background-color:#3A57FF;
-	color:white;
-	-webkit-border-top-left-radius:9px;
-	-webkit-border-top-right-radius:9px;
-	-webkit-border-bottom-right-radius:9px;
-	-webkit-border-bottom-left-radius:9px;
+	background-color: rgb(229, 229, 229);
+	-webkit-border-radius:9px;
 }
 #logoContainer div{
 	font-size:small;
 }
+
+.white{
+	color:white;
+}
 .searchBox {
-		-webkit-border-bottom-left-radius: 11px;
-		-webkit-border-bottom-right-radius: 11px;
-		-webkit-border-top-left-radius: 11px;
-		-webkit-border-top-right-radius: 11px;
+		-webkit-border-radius: 11px;
 		-webkit-rtl-ordering: logical;
 		-webkit-user-select: text;
 		background-color: white;
@@ -105,10 +103,7 @@ li
 	-webkit-appearance: none;
 	-webkit-background-clip: border;
 	-webkit-background-origin: padding;
-	-webkit-border-bottom-left-radius: 11px;
-	-webkit-border-bottom-right-radius: 11px;
-	-webkit-border-top-left-radius: 11px;
-	-webkit-border-top-right-radius: 11px;
+	-webkit-border-radius: 11px;
 	-webkit-box-align: center;
 	-webkit-box-sizing: border-box;
 	-webkit-rtl-ordering: logical;
