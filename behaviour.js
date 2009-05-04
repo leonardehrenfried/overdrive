@@ -1,33 +1,3 @@
-function Bookmark(url, title, tags, modified){
-	this.url=url;
-	this.title=title;
-	this.modified=modified;
-	
-			
-	if (typeof tags == 'string'){
-		this.tags=tags.split(",");
-	}
-	else
-	{
-		this.tags=tags;
-	}
-	
-	$("#content").append("<li><a href='"+this.url+"'>"+this.title+"</a></li>");
-	
-	this.getSqliteDate=function()
-	{
-		return modified.slice(0,-1);
-	};
-	
-	this.getTagsAsString=function () {
-		var tagsString="";
-		$.each(this.tags, function() {
-		      tagsString+=this+",";
-		    });
-		return tagsString;
-	};
-}
-
 var overdrive={};
 /*
 * Download the latest bookmarks from delicious
@@ -55,7 +25,6 @@ overdrive.ui.reset=function () {
 	for (i=0; i<list.length; i++){
 		overdrive.storage.deleteTable(list[i]);
 	}
-	//window.setTimout(window.location.reload,2000);
 	return false;
 };
 

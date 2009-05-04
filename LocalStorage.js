@@ -54,12 +54,12 @@ function LocalStorage(){
 	this.insertBookmark= function(bmark) {
 		this.db.transaction(function(tx){
 			     tx.executeSql("INSERT INTO bookmarks (url, title, tags, modified) VALUES (?,?,?,datetime(?))",
-					[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.getSqliteDate()], 			
+					[bmark.url, bmark.getTitleAsEntity(), bmark.getTagsAsString(),bmark.getSqliteDate()], 			
 				 function(tx, result){       
 			     }, 
 				 function(tx, error){
 				     tx.executeSql("UPDATE bookmarks SET url=?, title=?, tags=?, modified=datetime(?) WHERE url=?",
-						[bmark.url, bmark.title, bmark.getTagsAsString(),bmark.url, bmark.getSqliteDate()], 			
+						[bmark.url, bmark.getTitleAsEntity(), bmark.getTagsAsString(),bmark.url, bmark.getSqliteDate()], 			
 					 function(tx, result){       
 				     }, 
 					 function(tx, error){
