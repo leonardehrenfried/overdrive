@@ -444,9 +444,12 @@ $(document).ready(function(){
 		* Starts the the download of all bookmarks through the tag feed
 		*/
 		overdrive.startBookmarkTimeout=function () {
-			overdrive.storage.getNextTag(function (tag) {
-					overdrive.remote.getBookmarksFromTag(tag);
-			});
+			// if the user has entered his username
+			if (overdrive.storage.settings["username"]!=undefined) {
+				overdrive.storage.getNextTag(function (tag) {
+						overdrive.remote.getBookmarksFromTag(tag);
+				});
+			};
 			
 			if (overdrive.storage.settings["bookmarksComplete"]===undefined){
 				window.setTimeout(function () {
@@ -474,7 +477,7 @@ $(document).ready(function(){
 			var lastUpdate=new Date(overdrive.storage.settings["lastUpdate"]+(60000*mins));
 			var now=new Date();
 			
-			if (lastUpdate<now)
+			if (lastUpdate<now && overdrive.storage.settings["username"]!=undefined)
 			{
 				overdrive.sync(20); //get the last 20 bookmarks
 			}
