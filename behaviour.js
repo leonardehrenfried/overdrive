@@ -19,12 +19,20 @@ overdrive.sync=function(count) {
 * Click event callbacks
 */ 
 overdrive.ui={};
+overdrive.ui.bottomTabs=["username"];
 overdrive.ui.reset=function () {
-
 	var list=["bookmarks","tags","settings"];
 	for (i=0; i<list.length; i++){
 		overdrive.storage.deleteTable(list[i]);
 	}
+	window.setTimeout(function () {
+		try{
+			window.location.reload();
+		}
+		catch(err){
+			alert(err);
+		}
+	}, 1000);
 	return false;
 };
 
@@ -71,7 +79,7 @@ $(document).ready(function(){
 		
 		// intialise the user interface with variable from the db, uses a XHTML tag with the id of the settings in
 		// question
-		var uiFields=["username"];
+		var uiFields=overdrive.ui.bottomTabs;
 		for (i=0; i<uiFields.length; i++)
 		{
 			$("#"+uiFields[i]).text(overdrive.storage.settings[uiFields[i]]);
@@ -92,7 +100,7 @@ $(document).ready(function(){
 		* Starts the the download of all bookmarks through the tag feed
 		*/
 		overdrive.startBookmarkTimeout=function () {
-			// if the user has entered his username
+			// if the user has entered his username already
 			if (overdrive.storage.settings["username"]!=undefined) {
 				overdrive.storage.getNextTag(function (tag) {
 						overdrive.remote.getBookmarksFromTag(tag);
@@ -106,6 +114,22 @@ $(document).ready(function(){
 			}
 		};
 		
+		//wait for 500ms for the DB to be initialised, then start syncing with delicious.com
+		if (!overdrive.storage.settings["fullSync"] && overdrive.storage.settings["username"]!=undefined)
+		{
+			overdrive.sync(100);
+		}
+		
+		var mins=13;//minutes in between syncs
+		var lastUpdate=new Date(overdrive.storage.settings["lastUpdate"]+(60000*mins));
+		var now=new Date();
+		
+		if (lastUpdate<now && overdrive.storage.settings["username"]!=undefined)
+		{
+			overdrive.sync(20); //get the last 20 bookmarks
+		}
+		
+		
 		window.setTimeout(function (argument) {
 			overdrive.startBookmarkTimeout();
 		},2000);
@@ -113,24 +137,6 @@ $(document).ready(function(){
 	});
 	
 	overdrive.storage.getAllBookmarks();
-		
-	//wait for 500ms for the DB to be initialised, then start syncing with delicious.com
-	window.setTimeout(function(){
-			if (!overdrive.storage.settings["fullSync"] && overdrive.storage.settings["username"]!=undefined)
-			{
-				overdrive.sync(100);
-			}
-			
-			var mins=13;//minutes in between syncs
-			var lastUpdate=new Date(overdrive.storage.settings["lastUpdate"]+(60000*mins));
-			var now=new Date();
-			
-			if (lastUpdate<now && overdrive.storage.settings["username"]!=undefined)
-			{
-				overdrive.sync(20); //get the last 20 bookmarks
-			}
-			
-		}, 500);
 
 	$(".searchBox").keyup(function (e) {
 		overdrive.storage.searchBookmarks($(this).attr("value"));

@@ -163,11 +163,12 @@ li
 }
 
 #simplemodal-container {
-  height:400px;
-  width:400px;
-  background-color:#fff;
-  border:3px solid #ccc;
-  padding:1em;
+  	height:400px;
+  	width:400px;
+  	background-color:#fff;
+  	border:3px solid #ccc;
+  	padding:1em;
+	-webkit-border-radius: 11px;
 }
 
 #simplemodal-container a.modalCloseImg {
@@ -180,6 +181,10 @@ li
   top:-14px;
   right:-18px;
   cursor:pointer;
+}
+
+.addthis{
+	margin-top:1em;
 }
 
 /**  jGrowl styles **/
