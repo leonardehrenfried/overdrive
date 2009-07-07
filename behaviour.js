@@ -7,7 +7,12 @@ overdrive.sync=function(count) {
 	$.getJSON(url+"&callback=?", function(bookmarks){
 		$.jGrowl("Fetching data from delicious.com.");
 		$.each(bookmarks, function(){
-		    var bmark=new Bookmark(this.u, this.d, this.t, this.dt);
+		    var bmark=new Bookmark(this.u, this.d, this.t, this.dt, 
+				//asynchronous callback parameter
+				function (obj) {
+					window.console.log(obj);
+					obj.append();
+				});
 			overdrive.storage.insertBookmark(bmark);
 		});
 		var date=new Date();
@@ -15,6 +20,25 @@ overdrive.sync=function(count) {
 		overdrive.storage.setSetting("fullSync", true);
    	});
 };
+
+/*
+* Starts the the download of all bookmarks through the tag feed
+*/
+overdrive.startBookmarkTimeout=function () {
+	if (overdrive.storage.settings["tagsDownloaded"]===true || overdrive.storage.settings["tagsDownloaded"]==="True") {
+		
+		overdrive.storage.getNextTag(function (tag) {	
+				overdrive.remote.getBookmarksFromTag(tag);		
+		});
+	};
+	
+	if (overdrive.storage.settings["bookmarksComplete"]!==true){
+		window.setTimeout(function () {
+			overdrive.startBookmarkTimeout();
+		},2000);
+	}
+};
+
 /*
 * Click event callbacks
 */ 
@@ -85,34 +109,37 @@ $(document).ready(function(){
 			$("#"+uiFields[i]).text(overdrive.storage.settings[uiFields[i]]);
 		}
 		
-		// if the tags have not been downloaded yet
-		if (!overdrive.storage.settings["tagsDownloaded"])
-		{
-			$.jGrowl("Downloading tags from delicious.com"); 
-			
-			var tags=overdrive.remote.getAllTags(function (tag, bookmarks) {
-					overdrive.storage.insertTag(tag, bookmarks);
-			});
-			overdrive.storage.setSetting("tagsDownloaded", true);
-		}
-		
-		/*
-		* Starts the the download of all bookmarks through the tag feed
-		*/
-		overdrive.startBookmarkTimeout=function () {
-			// if the user has entered his username already
-			if (overdrive.storage.settings["username"]!=undefined) {
-				overdrive.storage.getNextTag(function (tag) {
-						overdrive.remote.getBookmarksFromTag(tag);
-				});
-			};
-			
-			if (overdrive.storage.settings["bookmarksComplete"]===undefined){
-				window.setTimeout(function () {
-					overdrive.startBookmarkTimeout();
-				},2000);
+		// get the bookmarks and start the download timer
+		window.setTimeout(function (argument) {
+			// if the tags have not been downloaded yet
+			if (overdrive.storage.settings["tagsDownloaded"]!==true && overdrive.storage.settings["username"]!==undefined)
+			{
+				$.jGrowl("Downloading tags from delicious.com"); 
+				
+				overdrive.remote.getAllTags(
+					//process callback function
+					function (tag, bookmarks) {
+						overdrive.storage.insertTag(tag, bookmarks);
+					},
+					// success callback
+					function () {
+						overdrive.storage.setSetting("tagsDownloaded", true);
+						window.setTimeout(function (argument) {
+							overdrive.startBookmarkTimeout();
+						}, 500);
+						
+					}
+				);
+
 			}
-		};
+		}, 500);
+		
+		window.setTimeout(function  (argument) {
+			if (overdrive.storage.settings["tagsDownloaded"]===true && overdrive.storage.settings["tagsDownloaded"]==="True") {
+				overdrive.startBookmarkTimeout();
+			};
+		},1500);
+		
 		
 		//wait for 500ms for the DB to be initialised, then start syncing with delicious.com
 		if (!overdrive.storage.settings["fullSync"] && overdrive.storage.settings["username"]!=undefined)
@@ -129,18 +156,26 @@ $(document).ready(function(){
 			overdrive.sync(20); //get the last 20 bookmarks
 		}
 		
-		
-		window.setTimeout(function (argument) {
-			overdrive.startBookmarkTimeout();
-		},2000);
 
 	});
+	
+
 	
 	overdrive.storage.getAllBookmarks();
 
 	$(".searchBox").keyup(function (e) {
-		overdrive.storage.searchBookmarks($(this).attr("value"));
+		if ($(this).attr("value")===""){
+			overdrive.storage.getAllBookmarks();
+		}
+		else{
+			overdrive.storage.searchBookmarks($(this).attr("value"));
+		}
+		
 	});
+	// for when the user returns to an unfinished bookmark download
+	window.setTimeout(function function_name (argument) {
+		overdrive.startBookmarkTimeout();
+	}, 2500);
 	
 	// catchall for click events with class="function"
 	$(".function").click(function () {

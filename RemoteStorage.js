@@ -4,14 +4,22 @@
 function RemoteStorage(){
 	
 	
-	this.getAllTags=function (callback) {
+	this.getAllTags=function (callback, success) {
+		
 		var tagFeed="http://feeds.delicious.com/v2/json/tags/"+overdrive.storage.settings["username"];
 		var array=[];
 		$.getJSON(tagFeed+"?callback=?", function (tags){
 				for (key in tags){
 					callback(key, tags[key]);
 				}
+				
+				if (success!==undefined)
+				{
+					success();
+				}
 			}
+			
+		
 		);
 	};
 	
@@ -38,7 +46,11 @@ function RemoteStorage(){
 		$.getJSON(url+"?callback=?", function(bookmarks){
 			//$.jGrowl("Fetching bookmarks with tag '"+tag+"' from delicious.com.");
 			$.each(bookmarks, function(){
-			    var bmark=new Bookmark(this.u, this.d, this.t, this.dt);
+			    var bmark=new Bookmark(this.u, this.d, this.t, this.dt, 
+				function  (argument) {
+					
+				}
+				);
 				processor(bmark);
 			});
 			success(tag);

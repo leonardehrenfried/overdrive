@@ -1,8 +1,9 @@
-function Bookmark(url, title, tags, modified){
+function Bookmark(url, title, tags, modified, callback){
 	this.url=url;
 	// replace tags with entities
 	this.title=title;
-
+	
+	var that=this;
 		
 	this.modified=modified;
 			
@@ -14,10 +15,14 @@ function Bookmark(url, title, tags, modified){
 		this.tags=tags;
 	}
 	
-	$("#content").append("<li><a href='"+this.url+"'>"+this.title+"</a></li>");
 	
-	this.getSqliteDate=function()
-	{
+	
+	this.append=function () {
+		$("#content").append("<li><a href='"+this.url+"'>"+this.title+"</a></li>");
+	};
+	
+	
+	this.getSqliteDate=function(){
 		return modified.slice(0,-1);
 	};
 	
@@ -40,10 +45,15 @@ function Bookmark(url, title, tags, modified){
 							];
 		var tempTitle=this.title;
 		
-		for (var i=0; i<replacements.length; i++)
-		{
+		for (var i=0; i<replacements.length; i++)		{
 			tempTitle=tempTitle.replace(replacements[i].code, replacements[i].ent);
 		};
 		return tempTitle;
 	};
+	/*
+	* Callback method to be executed once the object construction is nearly finished
+	*/ 
+	if (callback!==undefined){
+		callback(this);
+	}
 }

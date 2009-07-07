@@ -13,6 +13,7 @@ function LocalStorage(){
 	this.displayQueue;
 	this.settings=new Array();
 	
+	
 	/**
 	* This block checks if the tables exists and creates the necessary ones.
 	*/
@@ -74,12 +75,12 @@ function LocalStorage(){
 	this.setSetting = function (key, value) {
 		this.settings[key]=value;
 		var type=typeof value;
-		if (typeof value == 'number'){
+		if (typeof value === 'number'){
 			setting+="";
 			type=typeof key;
 		}
 		
-		else if (typeof value=='object'){
+		else if (typeof value==='object'){
 			type="date";
 		}
 		
@@ -129,7 +130,7 @@ function LocalStorage(){
 					[], 			
 				 function(tx, result){
 					if (!result.rows.length){
-						$.jGrowl("could not find the requested setting");
+						$.jGrowl("Could not find the requested setting");
 					}
 
 					else{
@@ -176,7 +177,48 @@ function LocalStorage(){
 	{
 		this.db.transaction(function(tx) 
 		{
-			var result=tx.executeSql("SELECT * FROM bookmarks WHERE tags LIKE ? OR title LIKE ? ORDER BY modified DESC",["%"+term+"%","%"+term+"%"], 
+			var terms=term.split(" ");
+			var array=[];
+			
+			var sql="SELECT * FROM bookmarks WHERE (tags LIKE ?";
+			array.push("%"+terms[0]+"%");
+			
+			for (var i=1; i<terms.length; i++){
+				sql+=" AND tags LIKE ? ";
+				array.push("%"+terms[i]+"%");
+			}
+			
+			sql+=") ";
+			sql+="OR (";
+			
+			sql+=" title LIKE ? ";
+			array.push("%"+terms[0]+"%");
+			
+			for (i=1; i<terms.length; i++){
+				sql+="AND title LIKE ? ";
+				array.push("%"+terms[i]+"%");
+			}
+			
+			sql+=") ";
+			
+			if (terms.lenght>1){
+				sql+="OR (";
+				
+				
+
+				for (i=1; i<terms.length; i++){
+					sql+=" title LIKE ? AND tags LIKE ? ";
+					array.push("%"+terms[i]+"%");
+					array.push("%"+terms[i]+"%");
+				}
+
+				sql+=") ";	
+			}
+			
+			sql+="ORDER BY modified DESC";
+			
+			window.console.log(sql);
+			var result=tx.executeSql(sql,array, 
 				function(tx, result){
 					if (!result.rows.length){
 						$("#content").empty();
@@ -186,7 +228,11 @@ function LocalStorage(){
 						$("#content").empty();
 						for (var i = 0; i < result.rows.length; ++i) {
 							var row = result.rows.item(i);
-							var bmark = new Bookmark(row['url'], row['title'], row['tags'], row['modified']);	
+							var bmark = new Bookmark(row['url'], row['title'], row['tags'], row['modified'],
+							function (obj) {
+								obj.append();
+							}
+							);	
 						}
 		            }
 		        }, 
@@ -199,7 +245,7 @@ function LocalStorage(){
 	this.getAllBookmarks=function(){
 		this.db.transaction(function(tx) 
 		{
-			var result=tx.executeSql("SELECT * FROM bookmarks ORDER BY modified DESC",[], 
+			var result=tx.executeSql("SELECT * FROM bookmarks ORDER BY modified DESC LIMIT 400",[], 
 				function(tx, result){
 					if (!result.rows.length){
 						$("#content").empty();
@@ -210,7 +256,14 @@ function LocalStorage(){
 						$("#content").empty();
 						for (var i = 0; i < result.rows.length; ++i) {
 							var row = result.rows.item(i);
-							var bmark = new Bookmark(row['url'], row['title'], row['tags'], row['modified']);	
+							var bmark = new Bookmark(row['url'], row['title'], row['tags'], row['modified'],
+							//callback function to be passed into the Bookmark object for execution after db fetch
+							function (obj) {
+								
+								obj.append();
+							}
+							
+							);	
 						}
 		            }
 		        }, 
@@ -246,7 +299,8 @@ function LocalStorage(){
 				 function(tx, result){
 						
 						if (!result.rows.length){
-							overdrive.storage.setSetting("bookmarksComplete", true);	
+							$.jGrowl("finished with tags");
+							overdrive.storage.setSetting("bookmarksComplete", true);
 						}
 
 						else{
