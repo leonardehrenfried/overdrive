@@ -299,10 +299,8 @@ function LocalStorage(){
 				 function(tx, result){
 						
 						if (!result.rows.length){
-							$.jGrowl("finished with tags");
 							overdrive.storage.setSetting("bookmarksComplete", true);
 						}
-
 						else{
 							var row = result.rows.item(0);
 							callback(row["tag"]);

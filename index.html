@@ -40,21 +40,35 @@
 </div>
 <ul id="footerMenu">
 	<li id="username"></li>
-	<li><a class="white" href="http://lenni.me/blog/?p=106">blog</a><small> (last changes: july 6th)</small></li>
+	<li><a class="white" href="http://lenni.info/blog/2009/05/overdrive-deliciouscom-a-fast-browser-plugin-for-deliciouscom/">blog</a><small> (last changes: july 6th)</small></li>
 	<li><a class="function white" href="reset">reset overdrive</a></li>
 </ul>
 <div id="errorConsole"></div>
 
+<!-- Uservoice -->
 
-    
 <script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+  var uservoiceJsHost = ("https:" == document.location.protocol) ? "https://uservoice.com" : "http://cdn.uservoice.com";
+  document.write(unescape("%3Cscript src='" + uservoiceJsHost + "/javascripts/widgets/tab.js' type='text/javascript'%3E%3C/script%3E"))
 </script>
 <script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-3036234-8");
-pageTracker._trackPageview();
-} catch(err) {}</script>
+UserVoice.Tab.show({ 
+  key: 'overdrive',
+  host: 'overdrive.uservoice.com', 
+  forum: 'general', 
+  alignment: 'left',
+  background_color:'#f00', 
+  text_color: 'white',
+  hover_color: '#06C',
+  lang: 'en'
+})
+</script>
+
+<!-- Clicky tracking -->
+<script type="text/javascript">
+var domainy = location.protocol == "https:" ? "https://static.getclicky.com" : "http://static.getclicky.com";
+document.write(unescape("%3Cscript src='" + domainy + "/112643.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+
 </body>
 </html>
