@@ -18,6 +18,11 @@ li{
 	margin:5px;
 }
 
+.addthis
+{
+    width:200px;
+}
+
 #footerMenu{
 	position:fixed;
 	bottom:0;

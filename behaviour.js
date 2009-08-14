@@ -60,6 +60,11 @@ overdrive.ui.reset=function () {
 	return false;
 };
 
+overdrive.ui.showFeedback=function () {
+    UserVoice.Popin.show(); 
+    return false;
+};
+
 
 
 $(document).ready(function(){
