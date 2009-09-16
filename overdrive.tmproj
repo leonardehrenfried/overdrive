@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>update.sh</string>
+	<string>style.css</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -34,20 +34,6 @@
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
-		</dict>
-		<key>RemoteStorage.js</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>5</integer>
-				<key>line</key>
-				<integer>16</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>11</integer>
 		</dict>
 		<key>behaviour.js</key>
 		<dict>
@@ -98,14 +84,14 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>49</integer>
+				<integer>23</integer>
 				<key>line</key>
-				<integer>36</integer>
+				<integer>5</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>25</integer>
+			<integer>0</integer>
 		</dict>
 		<key>jquery.simplemodal-1.2.3.min.js</key>
 		<dict>
@@ -156,7 +142,6 @@
 		<string>build.xml</string>
 		<string>index.html</string>
 		<string>style.css</string>
-		<string>RemoteStorage.js</string>
 		<string>LocalStorage.js</string>
 		<string>behaviour.js</string>
 	</array>

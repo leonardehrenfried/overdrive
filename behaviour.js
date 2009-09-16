@@ -69,6 +69,8 @@ overdrive.ui.showFeedback=function () {
 
 $(document).ready(function(){
 	
+	$('#mainSearch').focus();
+	
 	try{
 		overdrive.storage = new LocalStorage();
 		overdrive.remote=new RemoteStorage();
